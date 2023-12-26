@@ -61,7 +61,7 @@ public class StarRocksTable implements Table, SupportsWrite {
     public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
         WriteStarRocksConfig writeConfig = new WriteStarRocksConfig(config.getOriginOptions(), schema, starRocksSchema);
         checkWriteParameter(writeConfig);
-        return new StarRocksWriteBuilder(info, writeConfig);
+        return new StarRocksWriteBuilder(info, writeConfig, starRocksSchema);
     }
 
     @Override

@@ -88,7 +88,7 @@ public class StarRocksDataWriter implements DataWriter<InternalRow>, Serializabl
         log.info("partitionId: {}, taskId: {}, epochId: {} commit", partitionId, taskId, epochId);
         try {
             manager.flush();
-            return new StarRocksWriterCommitMessage(partitionId, taskId, epochId, null);
+            return new StarRocksWriterCommitMessage(partitionId, taskId, epochId);
         } catch (Exception e) {
             String errMsg = String.format("Failed to commit, partitionId: %s, taskId: %s, epochId: %s",
                     partitionId, taskId, epochId);

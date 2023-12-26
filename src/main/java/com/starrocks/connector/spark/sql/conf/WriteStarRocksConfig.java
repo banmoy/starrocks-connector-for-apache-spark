@@ -38,8 +38,10 @@ import org.apache.spark.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class WriteStarRocksConfig extends StarRocksConfigBase {
@@ -74,6 +76,13 @@ public class WriteStarRocksConfig extends StarRocksConfigBase {
     private static final String KEY_NUM_PARTITIONS = WRITE_PREFIX + "num.partitions";
     private static final String KEY_PARTITION_COLUMNS = WRITE_PREFIX + "partition.columns";
 
+    private static final String KEY_MODE = WRITE_PREFIX + "mode";
+
+    public enum WriteMode {
+        DIRECT,
+        STAGE
+    }
+
     private String labelPrefix = "spark";
     private int waitForContinueTimeoutMs = 30000;
     // Only support to write to one table, and one thread is enough
@@ -100,6 +109,12 @@ public class WriteStarRocksConfig extends StarRocksConfigBase {
 
     private String streamLoadColumnProperty;
     private String[] streamLoadColumnNames;
+
+    private WriteMode writeMode = WriteMode.DIRECT;
+
+    private WriteStarRocksConfig() {
+        super();
+    }
 
     public WriteStarRocksConfig(Map<String, String> originOptions, StructType sparkSchema, StarRocksSchema starRocksSchema) {
         super(originOptions);
@@ -155,6 +170,8 @@ public class WriteStarRocksConfig extends StarRocksConfigBase {
         partitionColumns = getArray(KEY_PARTITION_COLUMNS, null);
         supportTransactionStreamLoad = StreamLoadUtils.isStarRocksSupportTransactionLoad(
                 Arrays.asList(getFeHttpUrls()), getHttpRequestConnectTimeoutMs(), getUsername(), getPassword());
+
+        writeMode = WriteMode.valueOf(get(KEY_MODE, "direct").toUpperCase());
     }
 
     private void genStreamLoadColumns(StructType sparkSchema, StarRocksSchema starRocksSchema) {
@@ -234,6 +251,45 @@ public class WriteStarRocksConfig extends StarRocksConfigBase {
     public boolean isPartialUpdate() {
         String val = properties.get("partial_update");
         return val != null && val.equalsIgnoreCase("true");
+    }
+
+    public boolean isPartialUpdateColumnMode() {
+        String val = properties.get("partial_update_mode");
+        return val != null && val.equalsIgnoreCase("column");
+    }
+
+    public WriteMode getWriteMode() {
+        return writeMode;
+    }
+
+    public WriteStarRocksConfig copy(String dataBase, String table, List<String> excludeStreamLoadProperties) {
+        WriteStarRocksConfig copyConfig = new WriteStarRocksConfig();
+        super.copy(copyConfig);
+        copyConfig.database = dataBase;
+        copyConfig.table = table;
+        copyConfig.labelPrefix = labelPrefix;
+        copyConfig.waitForContinueTimeoutMs = waitForContinueTimeoutMs;
+        copyConfig.ioThreadCount = ioThreadCount;
+        copyConfig.chunkLimit = chunkLimit;
+        copyConfig.scanFrequencyInMs = scanFrequencyInMs;
+        copyConfig.enableTransactionStreamLoad = enableTransactionStreamLoad;
+        copyConfig.bufferSize = bufferSize;
+        copyConfig.bufferRows = bufferRows;
+        copyConfig.flushInterval = flushInterval;
+        copyConfig.maxRetries = maxRetries;
+        copyConfig.retryIntervalInMs = retryIntervalInMs;
+        copyConfig.properties = new HashMap<>(properties);
+        excludeStreamLoadProperties.forEach(copyConfig.properties::remove);
+        copyConfig.format = format;
+        copyConfig.rowDelimiter = rowDelimiter;
+        copyConfig.columnSeparator = columnSeparator;
+        copyConfig.supportTransactionStreamLoad = supportTransactionStreamLoad;
+        copyConfig.numPartitions = numPartitions;
+        copyConfig.partitionColumns = partitionColumns;
+        copyConfig.streamLoadColumnProperty = streamLoadColumnProperty;
+        copyConfig.streamLoadColumnNames = streamLoadColumnNames;
+
+        return copyConfig;
     }
 
     public StreamLoadProperties toStreamLoadProperties() {

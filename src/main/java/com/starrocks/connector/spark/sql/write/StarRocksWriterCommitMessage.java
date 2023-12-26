@@ -19,28 +19,22 @@
 
 package com.starrocks.connector.spark.sql.write;
 
-import com.starrocks.data.load.stream.StreamLoadSnapshot;
-
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 import java.util.Objects;
 
 public class StarRocksWriterCommitMessage implements WriterCommitMessage {
 
+    private static final long serialVersionUID = 1L;
+
     private final int partitionId;
     private final long taskId;
     private final long epochId;
 
-    private final StreamLoadSnapshot snapshot;
-
-    public StarRocksWriterCommitMessage(int partitionId,
-                                        long taskId,
-                                        long epochId,
-                                        StreamLoadSnapshot snapshot) {
+    public StarRocksWriterCommitMessage(int partitionId, long taskId, long epochId) {
         this.partitionId = partitionId;
         this.taskId = taskId;
         this.epochId = epochId;
-        this.snapshot = snapshot;
     }
 
     public int getPartitionId() {
@@ -53,10 +47,6 @@ public class StarRocksWriterCommitMessage implements WriterCommitMessage {
 
     public long getEpochId() {
         return epochId;
-    }
-
-    public StreamLoadSnapshot getSnapshot() {
-        return snapshot;
     }
 
     @Override

@@ -19,13 +19,17 @@
 
 package com.starrocks.connector.spark.sql.schema;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.starrocks.connector.spark.sql.schema.StarRocksField.__OP;
 
-public class StarRocksSchema {
+public class StarRocksSchema implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private final List<StarRocksField> columns;
     private final List<StarRocksField> pks;
     private final Map<String, StarRocksField> columnMap;
@@ -41,6 +45,10 @@ public class StarRocksSchema {
 
     public List<StarRocksField> getColumns() {
         return columns;
+    }
+
+    public List<StarRocksField> getPrimaryKeys() {
+        return pks;
     }
 
     public boolean isPrimaryKey() {

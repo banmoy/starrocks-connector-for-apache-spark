@@ -60,14 +60,14 @@ public abstract class StarRocksConfigBase implements StarRocksConfig {
     // data type mapping instead of all columns
     public static final String KEY_COLUMN_TYPES = PREFIX + "column.types";
 
-    protected final Map<String, String> originOptions;
+    protected Map<String, String> originOptions;
 
     private String[] feHttpUrls;
     private String feJdbcUrl;
     private String username;
     private String password;
-    private String database;
-    private String table;
+    protected String database;
+    protected String table;
     @Nullable
     private String[] columns;
     @Nullable
@@ -76,6 +76,10 @@ public abstract class StarRocksConfigBase implements StarRocksConfig {
     private int httpRequestConnectTimeoutMs;
     private int httpRequestSocketTimeoutMs;
     private ZoneId timeZone;
+
+    // Just for copy()
+    protected StarRocksConfigBase() {
+    }
 
     public StarRocksConfigBase(Map<String, String> options) {
         this.originOptions = new HashMap<>(options);
@@ -104,6 +108,22 @@ public abstract class StarRocksConfigBase implements StarRocksConfig {
 
         String tz = get(STARROCKS_TIMEZONE);
         this.timeZone = tz == null ? ZoneId.systemDefault() : ZoneId.of(get(STARROCKS_TIMEZONE));
+    }
+
+    protected void copy(StarRocksConfigBase other) {
+        other.originOptions = new HashMap<>(originOptions);
+        other.feHttpUrls = feHttpUrls;
+        other.feJdbcUrl = feJdbcUrl;
+        other.username = username;
+        other.password = password;
+        other.database = database;
+        other.table = table;
+        other.columns = columns;
+        other.columnTypes = columnTypes;
+        other.httpRequestRetries = httpRequestRetries;
+        other.httpRequestConnectTimeoutMs = httpRequestConnectTimeoutMs;
+        other.httpRequestSocketTimeoutMs = httpRequestSocketTimeoutMs;
+        other.timeZone = timeZone;
     }
 
     @Override
