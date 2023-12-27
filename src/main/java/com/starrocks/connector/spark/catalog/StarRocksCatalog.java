@@ -74,7 +74,7 @@ public class StarRocksCatalog implements Serializable {
             throw new StarRocksCatalogException("Failed to open StarRocks catalog", e);
         }
 
-        LOG.info("Open StarRocks catalog");
+        LOG.warn("Open StarRocks catalog");
     }
 
     /**
@@ -84,7 +84,7 @@ public class StarRocksCatalog implements Serializable {
      * @throws StarRocksCatalogException in case of any runtime exception
      */
     public void close() throws StarRocksCatalogException {
-        LOG.info("Close StarRocks catalog");
+        LOG.warn("Close StarRocks catalog");
     }
 
     /**
@@ -127,9 +127,9 @@ public class StarRocksCatalog implements Serializable {
         String sql = buildCreateDatabaseSql(databaseName, ignoreIfExists);
         try {
             executeUpdateStatement(sql);
-            LOG.info("Successful to create database {}, sql: {}", databaseName, sql);
+            LOG.warn("Successful to create database {}, sql: {}", databaseName, sql);
         } catch (Exception e) {
-            LOG.info("Failed to create database {}, sql: {}", databaseName, sql, e);
+            LOG.warn("Failed to create database {}, sql: {}", databaseName, sql, e);
             throw new StarRocksCatalogException(
                     String.format(
                             "Failed to create database %s, ignoreIfExists: %s",
@@ -246,7 +246,7 @@ public class StarRocksCatalog implements Serializable {
         String createTableSql = buildCreateTableSql(table, ignoreIfExists);
         try {
             executeUpdateStatement(createTableSql);
-            LOG.info("Success to create table {}.{}, sql: {}",
+            LOG.warn("Success to create table {}.{}, sql: {}",
                     table.getDatabaseName(), table.getDatabaseName(), createTableSql);
         } catch (Exception e) {
             LOG.error("Failed to create table {}.{}, sql: {}",
@@ -317,7 +317,7 @@ public class StarRocksCatalog implements Serializable {
         try {
             long startTimeMillis = System.currentTimeMillis();
             executeAlter(databaseName, tableName, alterSql, timeoutSecond);
-            LOG.info("Success to add columns to {}.{}, duration: {}ms, sql: {}",
+            LOG.warn("Success to add columns to {}.{}, duration: {}ms, sql: {}",
                     databaseName, tableName, System.currentTimeMillis() - startTimeMillis, alterSql);
         } catch (Exception e) {
             LOG.error("Failed to add columns to {}.{}, sql: {}", databaseName, tableName, alterSql, e);
@@ -351,7 +351,7 @@ public class StarRocksCatalog implements Serializable {
         try {
             long startTimeMillis = System.currentTimeMillis();
             executeAlter(databaseName, tableName, alterSql, timeoutSecond);
-            LOG.info("Success to drop columns from {}.{}, duration: {}ms, sql: {}",
+            LOG.warn("Success to drop columns from {}.{}, duration: {}ms, sql: {}",
                     databaseName, tableName, System.currentTimeMillis() - startTimeMillis, alterSql);
         } catch (Exception e) {
             LOG.error("Failed to drop columns from {}.{}, sql: {}", databaseName, tableName, alterSql);
@@ -380,7 +380,7 @@ public class StarRocksCatalog implements Serializable {
             try {
                 jobState = getAlterJobState(databaseName, tableName);
                 retries = 0;
-                LOG.info("Get alter job state for {}.{}, {}", databaseName, tableName, jobState);
+                LOG.warn("Get alter job state for {}.{}, {}", databaseName, tableName, jobState);
                 if ("FINISHED".equalsIgnoreCase(jobState.state)) {
                     return;
                 } else if ("CANCELLED".equalsIgnoreCase(jobState.state)) {
@@ -492,10 +492,12 @@ public class StarRocksCatalog implements Serializable {
         }
     }
 
-    public void executeUpdateStatement(String sql) throws SQLException {
+    public void executeUpdateStatement(String... sqls) throws SQLException {
         try (Connection connection = getConnection();
                 Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sql);
+            for (String sql : sqls) {
+                statement.executeUpdate(sql);
+            }
         }
     }
 

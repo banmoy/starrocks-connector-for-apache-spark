@@ -84,12 +84,12 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
         timeStat.startCommit = System.currentTimeMillis();
         doCommit(messages);
         timeStat.endCommit = System.currentTimeMillis();
-        log.info("batch query `{}` commit, {}", logicalInfo.queryId(), timeStat);
+        log.warn("batch query `{}` commit, {}", logicalInfo.queryId(), timeStat);
     }
 
     @Override
     public void abort(WriterCommitMessage[] messages) {
-        log.info("batch query `{}` abort", logicalInfo.queryId());
+        log.warn("batch query `{}` abort", logicalInfo.queryId());
         doAbort(messages);
     }
 
@@ -100,13 +100,13 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
 
     @Override
     public void commit(long epochId, WriterCommitMessage[] messages) {
-        log.info("streaming query `{}` commit", logicalInfo.queryId());
+        log.warn("streaming query `{}` commit", logicalInfo.queryId());
         doCommit(messages);
     }
 
     @Override
     public void abort(long epochId, WriterCommitMessage[] messages) {
-        log.info("streaming query `{}` abort", logicalInfo.queryId());
+        log.warn("streaming query `{}` abort", logicalInfo.queryId());
         doAbort(messages);
     }
 
@@ -214,16 +214,16 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
         String updateSql = String.format("UPDATE %s SET %s FROM %s AS `t2` WHERE %s;",
                 targetTableId, joinedColumns, srcTableId, joinedKeys);
         String setVar = "SET partial_update_mode = 'column';";
-        log.info("Update sql: {}", updateSql);
+        log.warn("Update sql: {}", updateSql);
         try {
-            getCatalog().executeUpdateStatement(setVar + updateSql);
+            getCatalog().executeUpdateStatement(setVar, updateSql);
         } catch (Exception e) {
             log.error("Failed to execute update, temp table: {}, target table: {}", srcTableId, targetTableId, e);
             throw new StarRocksCatalogException("Failed to execute update for table " + targetTableId, e);
         }
         timeStat.endUpdate = System.currentTimeMillis();
         dropTempTable();
-        log.info("Success to execute update, temp table: {}, target table: {}", srcTableId, targetTableId);
+        log.warn("Success to execute update, temp table: {}, target table: {}", srcTableId, targetTableId);
     }
 
     private void doAbort(WriterCommitMessage[] messages) {
