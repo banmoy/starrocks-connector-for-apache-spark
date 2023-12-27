@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -52,6 +53,7 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
     private final WriteStarRocksConfig config;
     private final StarRocksSchema starRocksSchema;
     private final boolean isBatch;
+    private final TimeStat timeStat;
 
     @Nullable
     private transient String tempTable;
@@ -61,11 +63,14 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
         this.config = config;
         this.starRocksSchema = starRocksSchema;
         this.isBatch = isBatch;
+        this.timeStat = new TimeStat();
     }
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+        timeStat.startPrepare = System.currentTimeMillis();
         WriteStarRocksConfig writeConfig = doPrepare();
+        timeStat.endPrepare = System.currentTimeMillis();
         return new StarRocksWriterFactory(logicalInfo.schema(), writeConfig);
     }
 
@@ -76,8 +81,10 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-        log.info("batch query `{}` commit", logicalInfo.queryId());
+        timeStat.startCommit = System.currentTimeMillis();
         doCommit(messages);
+        timeStat.endCommit = System.currentTimeMillis();
+        log.info("batch query `{}` commit, {}", logicalInfo.queryId(), timeStat);
     }
 
     @Override
@@ -214,6 +221,7 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
             log.error("Failed to execute update, temp table: {}, target table: {}", srcTableId, targetTableId, e);
             throw new StarRocksCatalogException("Failed to execute update for table " + targetTableId, e);
         }
+        timeStat.endUpdate = System.currentTimeMillis();
         dropTempTable();
         log.info("Success to execute update, temp table: {}, target table: {}", srcTableId, targetTableId);
     }
@@ -237,5 +245,28 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
 
     private StarRocksCatalog getCatalog() {
         return new StarRocksCatalog(config.getFeJdbcUrl(), config.getUsername(), config.getPassword());
+    }
+
+    private static class TimeStat implements Serializable {
+        long startPrepare;
+        long endPrepare;
+        long startCommit;
+        long endUpdate;
+        long endCommit;
+
+        @Override
+        public String toString() {
+            long totalTimeMs = endCommit - startPrepare;
+            long prepareTimeMs = endPrepare -startPrepare;
+            long updateTimeMs = endUpdate - startCommit;
+            long dropTableMs = endCommit - endUpdate;
+            return "TimeStat{" +
+                    "totalTimeMs=" + totalTimeMs +
+                    ", prepareTimeMs=" + prepareTimeMs +
+                    ", updateTimeMs=" + updateTimeMs +
+                    ", dropTableMs=" + dropTableMs +
+                    ", otherTimeMs=" + (totalTimeMs - prepareTimeMs - updateTimeMs - dropTableMs) +
+                    '}';
+        }
     }
 }
