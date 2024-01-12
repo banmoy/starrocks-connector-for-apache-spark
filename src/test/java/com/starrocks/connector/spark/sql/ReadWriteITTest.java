@@ -46,6 +46,30 @@ import java.util.stream.Collectors;
 public class ReadWriteITTest extends ITTestBase {
 
     @Test
+    public void testBingx() throws Exception {
+        SparkSession spark = SparkSession
+                .builder()
+                .master("local[1]")
+                .appName("testBingx")
+                .getOrCreate();
+
+        String logDdl = String.format("CREATE TABLE dwd_user_log_active_ip \n" +
+                " USING starrocks\n" +
+                "OPTIONS(\n" +
+                "  \"starrocks.table.identifier\"=\"%s\",\n" +
+                "  \"starrocks.fe.http.url\"=\"%s\",\n" +
+                "  \"starrocks.fe.jdbc.url\"=\"%s\",\n" +
+                "  \"starrocks.user\"=\"%s\",\n" +
+                "  \"starrocks.password\"=\"%s\"\n" +
+                ")", String.join(".", "dwd", "dwd_user_log_active_ip"), FE_HTTP, FE_JDBC, USER, PASSWORD);
+        spark.sql(logDdl);
+
+        spark.sql("select uid,ip from dwd_user_log_active_ip where stats_date = '2023-01-12'").show();
+
+        spark.stop();
+    }
+
+    @Test
     public void testDataFrame() throws Exception {
         String tableName = "testDataFrame_" + genRandomUuid();
         prepareScoreBoardTable(tableName);
@@ -123,7 +147,7 @@ public class ReadWriteITTest extends ITTestBase {
                 "  \"starrocks.password\"=\"%s\"\n" +
                 ")", String.join(".", DB_NAME, tableName), FE_HTTP, FE_JDBC, USER, PASSWORD);
         spark.sql(ddl);
-        spark.sql("INSERT INTO sr_table VALUES (1, \"2\", 3), (2, \"3\", 4)");
+        spark.sql("INSERT OVERWRITE sr_table VALUES (1, \"2\", 3), (2, \"3\", 4)");
 
         List<List<Object>> actualWriteData = scanTable(DB_CONNECTION, DB_NAME, tableName);
         verifyResult(expectedData, actualWriteData);
