@@ -199,6 +199,7 @@ public class ReadWriteITTest extends ITTestBase {
                 "  \"starrocks.write.num.partitions\"=\"2\",\n" +
                 "  \"starrocks.write.partition.columns\"=\"id\",\n" +
                 "  \"starrocks.write.mode\"=\"stage\",\n" +
+                "  \"starrocks.request.query.timeout.s\"=\"900\",\n" +
                 "  \"starrocks.write.properties.partial_update_mode\"=\"column\",\n" +
                 "  \"starrocks.write.properties.partial_update\"=\"true\"\n" +
                 ")", String.join(".", DB_NAME, tableName), FE_HTTP, FE_JDBC, USER, PASSWORD);

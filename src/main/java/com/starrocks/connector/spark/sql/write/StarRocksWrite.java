@@ -213,10 +213,11 @@ public class StarRocksWrite implements BatchWrite, StreamingWrite {
                 .collect(Collectors.joining(", "));
         String updateSql = String.format("UPDATE %s SET %s FROM %s AS `t2` WHERE %s;",
                 targetTableId, joinedColumns, srcTableId, joinedKeys);
+        String setQueryTimeout = String.format("SET query_timeout = %s;", config.getUpdateTimeout());
         String setVar = "SET partial_update_mode = 'column';";
         log.warn("Update sql: {}", updateSql);
         try {
-            getCatalog().executeUpdateStatement(setVar, updateSql);
+            getCatalog().executeUpdateStatement(setQueryTimeout, setVar, updateSql);
         } catch (Exception e) {
             log.error("Failed to execute update, temp table: {}, target table: {}", srcTableId, targetTableId, e);
             throw new StarRocksCatalogException("Failed to execute update for table " + targetTableId, e);

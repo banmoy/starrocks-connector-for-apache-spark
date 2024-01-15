@@ -41,8 +41,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.starrocks.connector.spark.cfg.ConfigurationOptions.STARROCKS_REQUEST_QUERY_TIMEOUT_S;
+import static com.starrocks.connector.spark.cfg.ConfigurationOptions.STARROCKS_REQUEST_QUERY_TIMEOUT_S_DEFAULT;
 
 public class WriteStarRocksConfig extends StarRocksConfigBase {
 
@@ -111,6 +113,7 @@ public class WriteStarRocksConfig extends StarRocksConfigBase {
     private String[] streamLoadColumnNames;
 
     private WriteMode writeMode = WriteMode.DIRECT;
+    private int updateTimeout = 300;
 
     private WriteStarRocksConfig() {
         super();
@@ -172,6 +175,7 @@ public class WriteStarRocksConfig extends StarRocksConfigBase {
                 Arrays.asList(getFeHttpUrls()), getHttpRequestConnectTimeoutMs(), getUsername(), getPassword());
 
         writeMode = WriteMode.valueOf(get(KEY_MODE, "direct").toUpperCase());
+        updateTimeout = getInt(STARROCKS_REQUEST_QUERY_TIMEOUT_S, STARROCKS_REQUEST_QUERY_TIMEOUT_S_DEFAULT);
     }
 
     private void genStreamLoadColumns(StructType sparkSchema, StarRocksSchema starRocksSchema) {
@@ -260,6 +264,10 @@ public class WriteStarRocksConfig extends StarRocksConfigBase {
 
     public WriteMode getWriteMode() {
         return writeMode;
+    }
+
+    public int getUpdateTimeout() {
+        return updateTimeout;
     }
 
     public WriteStarRocksConfig copy(String dataBase, String table, List<String> excludeStreamLoadProperties) {
